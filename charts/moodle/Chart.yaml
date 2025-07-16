@@ -1,0 +1,16 @@
+apiVersion: v2
+name: moodle
+description: A Helm chart for Moodle LMS
+type: application
+version: 0.1.0
+appVersion: "4.3"
+keywords:
+  - moodle
+  - lms
+  - education
+home: https://moodle.org/
+sources:
+  - https://github.com/moodle/moodle
+maintainers:
+  - name: Moodle Team
+    email: support@moodle.org 

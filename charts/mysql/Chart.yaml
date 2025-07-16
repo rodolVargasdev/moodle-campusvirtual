@@ -1,0 +1,16 @@
+apiVersion: v2
+name: mysql
+description: A Helm chart for MySQL Database
+type: application
+version: 0.1.0
+appVersion: "8.0"
+keywords:
+  - mysql
+  - database
+  - sql
+home: https://www.mysql.com/
+sources:
+  - https://github.com/mysql/mysql-server
+maintainers:
+  - name: MySQL Team
+    email: support@mysql.com 

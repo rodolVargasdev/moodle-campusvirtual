@@ -1,0 +1,60 @@
+# Valores de configuración para desarrollo
+# Uso: helm install moodle ./charts/moodle -f values-development.yaml
+
+# Configuración de Moodle
+moodle:
+  username: admin
+  password: "admin123!"
+  email: "admin@example.com"
+  fullname: "Moodle Administrator"
+  shortname: "admin"
+  sitename: "Moodle Development"
+  siteurl: "http://moodle.local"
+
+# Configuración de la base de datos
+database:
+  host: moodle-mysql.moodle.svc.cluster.local
+  port: 3306
+  name: moodle
+  user: moodle
+  password: "moodle123!"
+  type: mysql
+
+# Configuración de recursos (mínimos para desarrollo)
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+
+# Configuración de persistencia
+persistence:
+  enabled: true
+  storageClass: "standard"
+  size: 10Gi
+  accessMode: ReadWriteOnce
+
+# Configuración de replicas
+replicaCount: 1
+
+# Configuración de ingress sin SSL
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+  hosts:
+    - host: moodle.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Configuración de seguridad (relajada para desarrollo)
+securityContext: {}
+
+podSecurityContext: {} 

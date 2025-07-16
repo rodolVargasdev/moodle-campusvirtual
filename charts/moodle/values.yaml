@@ -1,0 +1,113 @@
+# Default values for moodle
+replicaCount: 1
+
+image:
+  repository: bitnami/moodle
+  tag: "4.3"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+  hosts:
+    - host: moodle.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+
+persistence:
+  enabled: true
+  storageClass: "standard"
+  size: 50Gi
+  accessMode: ReadWriteOnce
+
+database:
+  host: moodle-mysql.moodle.svc.cluster.local
+  port: 3306
+  name: moodle
+  user: moodle
+  password: ""
+  type: mysql
+
+moodle:
+  username: admin
+  password: admin
+  email: admin@example.com
+  fullname: "Moodle Administrator"
+  shortname: "admin"
+  sitename: "Moodle Campus Virtual"
+  siteurl: "http://moodle.local"
+
+env:
+  - name: MOODLE_DATABASE_HOST
+    value: "{{ .Values.database.host }}"
+  - name: MOODLE_DATABASE_PORT_NUMBER
+    value: "{{ .Values.database.port }}"
+  - name: MOODLE_DATABASE_NAME
+    value: "{{ .Values.database.name }}"
+  - name: MOODLE_DATABASE_USER
+    value: "{{ .Values.database.user }}"
+  - name: MOODLE_DATABASE_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: moodle-db-secret
+        key: password
+  - name: MOODLE_USERNAME
+    value: "{{ .Values.moodle.username }}"
+  - name: MOODLE_PASSWORD
+    value: "{{ .Values.moodle.password }}"
+  - name: MOODLE_EMAIL
+    value: "{{ .Values.moodle.email }}"
+  - name: MOODLE_FULLNAME
+    value: "{{ .Values.moodle.fullname }}"
+  - name: MOODLE_SHORTNAME
+    value: "{{ .Values.moodle.shortname }}"
+  - name: MOODLE_SITENAME
+    value: "{{ .Values.moodle.sitename }}"
+  - name: MOODLE_SITE_URL
+    value: "{{ .Values.moodle.siteurl }}"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {} 

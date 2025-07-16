@@ -1,0 +1,208 @@
+---
+# MySQL Database Deployment
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: moodle
+type: Opaque
+data:
+  mysql-root-password: bW9vZGxlMTIzNDU=  # moodle12345
+  mysql-password: bW9vZGxlMTIzNDU=       # moodle12345
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: moodle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: moodle
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-root-password
+        - name: MYSQL_DATABASE
+          value: "moodle"
+        - name: MYSQL_USER
+          value: "moodle"
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: moodle
+  labels:
+    app: mysql
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+  selector:
+    app: mysql
+  type: ClusterIP
+---
+# Moodle Application Deployment (Versión simplificada)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moodle-data-pvc
+  namespace: moodle
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle
+  namespace: moodle
+  labels:
+    app: moodle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moodle
+  template:
+    metadata:
+      labels:
+        app: moodle
+    spec:
+      containers:
+      - name: moodle
+        image: bitnami/moodle:4.3.4
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MOODLE_DATABASE_HOST
+          value: "mysql"
+        - name: MOODLE_DATABASE_PORT_NUMBER
+          value: "3306"
+        - name: MOODLE_DATABASE_NAME
+          value: "moodle"
+        - name: MOODLE_DATABASE_USER
+          value: "moodle"
+        - name: MOODLE_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        - name: MOODLE_USERNAME
+          value: "admin"
+        - name: MOODLE_PASSWORD
+          value: "moodle12345"
+        - name: MOODLE_EMAIL
+          value: "admin@moodle.local"
+        - name: MOODLE_SITE_NAME
+          value: "Mi Campus Virtual"
+        - name: MOODLE_SKIP_BOOTSTRAP
+          value: "no"
+        - name: MOODLE_DATABASE_TYPE
+          value: "mysqli"
+        - name: MOODLE_ENABLE_HTTPS
+          value: "no"
+        - name: MOODLE_ENABLE_EMPTY_PASSWORD
+          value: "no"
+        - name: MOODLE_ENABLE_DATABASE_SSL
+          value: "no"
+        - name: MOODLE_EXTRA_INSTALL_ARGS
+          value: "--allow-unstable"
+        volumeMounts:
+        - name: moodle-data
+          mountPath: /bitnami/moodle
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: moodle-data
+        persistentVolumeClaim:
+          claimName: moodle-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: moodle
+  namespace: moodle
+  labels:
+    app: moodle
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: moodle 

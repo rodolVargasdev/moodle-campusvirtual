@@ -1,0 +1,70 @@
+# Valores de configuración para producción
+# Uso: helm install moodle ./charts/moodle -f values-production.yaml
+
+# Configuración de Moodle
+moodle:
+  username: admin
+  password: "CHANGE_THIS_PASSWORD"
+  email: "admin@tu-dominio.com"
+  fullname: "Moodle Administrator"
+  shortname: "admin"
+  sitename: "Moodle Campus Virtual"
+  siteurl: "https://moodle.tu-dominio.com"
+
+# Configuración de la base de datos
+database:
+  host: moodle-mysql.moodle.svc.cluster.local
+  port: 3306
+  name: moodle
+  user: moodle
+  password: "CHANGE_THIS_PASSWORD"
+  type: mysql
+
+# Configuración de recursos
+resources:
+  limits:
+    cpu: 2000m
+    memory: 4Gi
+  requests:
+    cpu: 1000m
+    memory: 2Gi
+
+# Configuración de persistencia
+persistence:
+  enabled: true
+  storageClass: "standard"
+  size: 100Gi
+  accessMode: ReadWriteOnce
+
+# Configuración de replicas
+replicaCount: 2
+
+# Configuración de ingress con SSL
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: moodle.tu-dominio.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: moodle-tls
+      hosts:
+        - moodle.tu-dominio.com
+
+# Configuración de seguridad
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000 
