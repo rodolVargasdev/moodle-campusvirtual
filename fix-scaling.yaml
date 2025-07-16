@@ -1,0 +1,181 @@
+---
+# Fix para escalado de Moodle - Nuevo PVC con ReadWriteMany
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: moodle-data-pvc-rwm
+  namespace: moodle
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: standard-rwo
+  resources:
+    requests:
+      storage: 20Gi
+---
+# ConfigMap para compartir configuración entre pods
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: moodle-config
+  namespace: moodle
+data:
+  MOODLE_DATABASE_HOST: "mysql"
+  MOODLE_DATABASE_PORT_NUMBER: "3306"
+  MOODLE_DATABASE_NAME: "moodle"
+  MOODLE_DATABASE_USER: "moodle"
+  MOODLE_DATABASE_TYPE: "mysqli"
+  MOODLE_ENABLE_HTTPS: "no"
+  MOODLE_ENABLE_EMPTY_PASSWORD: "no"
+  MOODLE_ENABLE_DATABASE_SSL: "no"
+  MOODLE_EXTRA_INSTALL_ARGS: "--allow-unstable"
+  MOODLE_SITE_NAME: "Campus Virtual GKE"
+  MOODLE_SKIP_BOOTSTRAP: "no"
+---
+# Deployment actualizado para escalado
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle-scaled
+  namespace: moodle
+  labels:
+    app: moodle-scaled
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: moodle-scaled
+  template:
+    metadata:
+      labels:
+        app: moodle-scaled
+    spec:
+      containers:
+      - name: moodle
+        image: bitnami/moodle:4.3.4
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MOODLE_DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_DATABASE_HOST
+        - name: MOODLE_DATABASE_PORT_NUMBER
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_DATABASE_PORT_NUMBER
+        - name: MOODLE_DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_DATABASE_NAME
+        - name: MOODLE_DATABASE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_DATABASE_USER
+        - name: MOODLE_DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: mysql-password
+        - name: MOODLE_USERNAME
+          value: "admin"
+        - name: MOODLE_PASSWORD
+          value: "moodle12345"
+        - name: MOODLE_EMAIL
+          value: "admin@moodle.local"
+        - name: MOODLE_SITE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_SITE_NAME
+        - name: MOODLE_SKIP_BOOTSTRAP
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_SKIP_BOOTSTRAP
+        - name: MOODLE_DATABASE_TYPE
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_DATABASE_TYPE
+        - name: MOODLE_ENABLE_HTTPS
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_ENABLE_HTTPS
+        - name: MOODLE_ENABLE_EMPTY_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_ENABLE_EMPTY_PASSWORD
+        - name: MOODLE_ENABLE_DATABASE_SSL
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_ENABLE_DATABASE_SSL
+        - name: MOODLE_EXTRA_INSTALL_ARGS
+          valueFrom:
+            configMapKeyRef:
+              name: moodle-config
+              key: MOODLE_EXTRA_INSTALL_ARGS
+        volumeMounts:
+        - name: moodle-data
+          mountPath: /bitnami/moodle
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            httpHeaders:
+            - name: Host
+              value: localhost
+          initialDelaySeconds: 120
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            httpHeaders:
+            - name: Host
+              value: localhost
+          initialDelaySeconds: 180
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+      volumes:
+      - name: moodle-data
+        persistentVolumeClaim:
+          claimName: moodle-data-pvc-rwm
+---
+# Service actualizado para balanceo de carga
+apiVersion: v1
+kind: Service
+metadata:
+  name: moodle-scaled
+  namespace: moodle
+  labels:
+    app: moodle-scaled
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: moodle-scaled
+  sessionAffinity: None 

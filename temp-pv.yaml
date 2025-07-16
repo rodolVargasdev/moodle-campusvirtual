@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: moodle-filestore-pv
+spec:
+  capacity:
+    storage: 1024Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: filestore-rwx
+  nfs:
+    server: 10.42.191.146
+    path: /moodleshare 
