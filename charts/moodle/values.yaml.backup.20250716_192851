@@ -3,7 +3,7 @@ replicaCount: 1
 
 image:
   repository: bitnami/moodle
-  tag: "5.0"
+  tag: "4.3"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
