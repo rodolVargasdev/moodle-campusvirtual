@@ -1,6 +1,6 @@
-FROM bitnami/moodle:latest
+FROM php:8.2-apache
 
-# Instalar dependencias adicionales
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
@@ -62,6 +62,15 @@ RUN a2enmod rewrite \
 RUN mkdir -p /var/moodledata \
     && chown -R www-data:www-data /var/moodledata \
     && chmod 755 /var/moodledata
+
+# Descargar e instalar Moodle
+WORKDIR /var/www/html
+RUN wget https://download.moodle.org/stable401/moodle-latest-401.tgz \
+    && tar -xzf moodle-latest-401.tgz \
+    && mv moodle/* . \
+    && rmdir moodle \
+    && rm moodle-latest-401.tgz \
+    && chown -R www-data:www-data /var/www/html
 
 # Configurar Apache para Moodle
 COPY apache-moodle.conf /etc/apache2/sites-available/000-default.conf
