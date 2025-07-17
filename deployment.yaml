@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moodle
+  namespace: moodle
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moodle-complete
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: moodle-complete
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: moodle-config
+        image: moodle:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /login/index.php
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: moodle
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /login/index.php
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: "3"
+            ephemeral-storage: 2Gi
+            memory: 6Gi
+          requests:
+            cpu: 1500m
+            ephemeral-storage: 2Gi
+            memory: 3Gi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/www/html
+          name: moodle-data
+        - mountPath: /var/moodledata
+          name: moodle-moodledata
+        - mountPath: /tmp
+          name: moodle-tmp
+        - mountPath: /var/cache
+          name: moodle-cache
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - effect: NoSchedule
+        key: kubernetes.io/arch
+        operator: Equal
+        value: amd64
+      volumes:
+      - name: moodle-data
+        persistentVolumeClaim:
+          claimName: moodle-data-pvc
+      - name: moodle-moodledata
+        persistentVolumeClaim:
+          claimName: moodle-moodledata-pvc
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+        name: moodle-tmp
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 512Mi
+        name: moodle-cache 

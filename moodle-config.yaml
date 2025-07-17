@@ -1,0 +1,27 @@
+apiVersion: v1
+data:
+  ALLOW_EMPTY_PASSWORD: "no"
+  MOODLE_DATABASE_HOST: 10.169.65.226
+  MOODLE_DATABASE_NAME: moodle
+  MOODLE_DATABASE_PASSWORD: 7s4bLvmszaV2CKjFd$ZV
+  MOODLE_DATABASE_PORT_NUMBER: "3306"
+  MOODLE_DATABASE_USER: root
+  MOODLE_EMAIL: admin@telesalud.gob.sv
+  MOODLE_ENABLE_HTTPS: "no"
+  MOODLE_EXTRA_PHP_SETTINGS: |-
+    memory_limit = 2G
+    max_execution_time = 1800
+    max_input_vars = 5000
+  MOODLE_PASSWORD: Admin123!
+  MOODLE_SITE_NAME: Moodle Telesalud
+  MOODLE_SKIP_BOOTSTRAP: "no"
+  MOODLE_USERNAME: admin
+  MYSQL_CLIENT_SSL_MODE: DISABLED
+  PHP_MAX_EXECUTION_TIME: "1800"
+  PHP_MEMORY_LIMIT: 2G
+  MOODLE_SKIP_INSTALL: "no"
+  MOODLE_DATABASE_TYPE: mysqli
+kind: ConfigMap
+metadata:
+  name: moodle-config
+  namespace: moodle 

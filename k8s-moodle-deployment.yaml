@@ -132,7 +132,7 @@ spec:
     spec:
       containers:
       - name: moodle
-        image: bitnami/moodle:4.4.2
+        image: bitnami/moodle:5.0
         ports:
         - containerPort: 8080
         env:
