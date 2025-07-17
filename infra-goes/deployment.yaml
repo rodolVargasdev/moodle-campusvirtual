@@ -19,6 +19,26 @@ spec:
       labels:
         app: moodle-complete
     spec:
+      initContainers:
+      - name: fix-permissions
+        image: busybox:1.35
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Setting permissions on mounted volumes..."
+          chown -R 1001:1001 /bitnami/moodle /bitnami/moodledata
+          chmod -R 755 /bitnami/moodle
+          chmod -R 777 /bitnami/moodledata
+          echo "Permissions set. Listing directories:"
+          ls -la /bitnami/moodle
+          ls -la /bitnami/moodledata
+        volumeMounts:
+        - name: moodle-data
+          mountPath: /bitnami/moodle
+        - name: moodle-moodledata
+          mountPath: /bitnami/moodledata
+        securityContext:
+          runAsUser: 0
       containers:
       - envFrom:
         - configMapRef:
@@ -77,6 +97,7 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext:
+        fsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
       terminationGracePeriodSeconds: 30
