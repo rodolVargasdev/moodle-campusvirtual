@@ -1,4 +1,4 @@
-FROM moodle:latest
+FROM bitnami/moodle:latest
 
 # Instalar dependencias adicionales
 RUN apt-get update && apt-get install -y \

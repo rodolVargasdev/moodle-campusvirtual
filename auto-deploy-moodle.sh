@@ -43,6 +43,37 @@ kubectl create namespace moodle --dry-run=client -o yaml | kubectl apply -f -
 echo "✅ Namespace moodle listo"
 echo ""
 
+# Verificar si existe el secreto SSL
+echo "🔐 Verificando certificados SSL..."
+if ! kubectl get secret cloudflare-cert -n moodle &> /dev/null; then
+    echo "⚠️  No se encontró el secreto SSL"
+    echo "   Generando certificados SSL temporales..."
+    
+    # Ejecutar script de generación de certificados
+    if [ -f "generate-ssl-certs.sh" ]; then
+        chmod +x generate-ssl-certs.sh
+        ./generate-ssl-certs.sh
+    else
+        echo "❌ Error: No se encontró el script generate-ssl-certs.sh"
+        echo "   Generando certificados manualmente..."
+        
+        # Generar certificados manualmente
+        mkdir -p ssl-certs
+        cd ssl-certs
+        
+        openssl genrsa -out key.pem 2048
+        openssl req -new -x509 -key key.pem -out cert.pem -days 365 -subj "/C=SV/ST=San Salvador/L=San Salvador/O=Telesalud/OU=IT/CN=campusvirtual.telesalud.gob.sv"
+        
+        kubectl create secret tls cloudflare-cert --cert=cert.pem --key=key.pem -n moodle
+        
+        cd ..
+        echo "✅ Certificados SSL generados y secreto creado"
+    fi
+else
+    echo "✅ Secreto SSL ya existe"
+fi
+echo ""
+
 # Crear IP estática global
 echo "🌐 Creando IP estática global..."
 gcloud compute addresses create moodle-ip --global --quiet || echo "ℹ️  IP estática ya existe"
@@ -63,6 +94,8 @@ gcloud builds submit --tag $IMAGE_NAME:$TAG . --quiet
 
 if [ $? -ne 0 ]; then
     echo "❌ Error: Falló la construcción con Cloud Build"
+    echo "   Verificando logs..."
+    gcloud builds list --limit=1 --format="value(id)" | xargs -I {} gcloud builds log {}
     exit 1
 fi
 echo "✅ Imagen construida exitosamente: $IMAGE_NAME:$TAG"
