@@ -27,6 +27,15 @@ else
     echo "✅ Certificados SSL ya existen"
 fi
 
+# Verificar si existe un deployment anterior
+echo "🔍 Verificando deployment anterior..."
+if kubectl get deployment moodle -n moodle &> /dev/null; then
+    echo "⚠️  Eliminando deployment anterior..."
+    kubectl delete deployment moodle -n moodle
+    echo "⏳ Esperando a que se elimine..."
+    kubectl wait --for=delete deployment/moodle -n moodle --timeout=60s 2>/dev/null || echo "✅ Deployment anterior eliminado"
+fi
+
 # Aplicar configuración
 echo "📋 Aplicando configuración de Moodle..."
 kubectl apply -f simple-moodle-deployment.yaml
