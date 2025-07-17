@@ -1,3 +1,0 @@
-Con estos archivos se puede desplegar moodle usando una base de datos externa, para lo que hay que modificar las variables en el archivo moodle-config.yaml, luego se despliega todo en el deployment.yaml y se crea un servicio del tipo nodeport y un ingress con certificado. 
-
-Acá faltan los archivos .pem y .key que se obtienen de cloudflare y de desplegarse en otro proyecto, se usaría un dominio diferente así que hay que cambiarlo en el archivo ingress.yaml.
