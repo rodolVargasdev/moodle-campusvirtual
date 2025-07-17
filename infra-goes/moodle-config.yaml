@@ -1,0 +1,30 @@
+apiVersion: v1
+data:
+  ALLOW_EMPTY_PASSWORD: "no"
+  MOODLE_DATABASE_HOST: mariadb-read.moodle.svc.cluster.local
+  MOODLE_DATABASE_NAME: moodle
+  MOODLE_DATABASE_PASSWORD: Admin123!
+  MOODLE_DATABASE_PORT_NUMBER: "3306"
+  MOODLE_DATABASE_USER: moodle
+  MOODLE_EMAIL: admin@telesalud.gob.sv
+  MOODLE_ENABLE_HTTPS: "no"
+  MOODLE_EXTRA_PHP_SETTINGS: |-
+    memory_limit = 2G
+    max_execution_time = 1800
+    max_input_vars = 5000
+    ; Configuración de sesiones en base de datos para despliegue multi-pod
+    session.save_handler = user
+    session.gc_maxlifetime = 7200
+  MOODLE_PASSWORD: Admin123!
+  MOODLE_SITE_NAME: Moodle Telesalud
+  MOODLE_USERNAME: admin
+  MYSQL_CLIENT_SSL_MODE: DISABLED
+  PHP_MAX_EXECUTION_TIME: "1800"
+  PHP_MEMORY_LIMIT: 2G
+  BITNAMI_DEBUG: "true"
+  MOODLE_SKIP_INSTALL: "yes"
+  MOODLE_DATABASE_TYPE: mariadb
+kind: ConfigMap
+metadata:
+  name: moodle-config
+  namespace: moodle
